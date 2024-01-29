@@ -1,0 +1,27 @@
+Package: idforecastutils
+Title: Utility functions for general infectious disease forecasting use
+Version: 0.0.0.9000
+Authors@R: 
+    person("Li", "Shandross", , "lshandross@umass.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: A set of utility functions for various infectious disease forecasting models, exercises, and rounds
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    distfromq (>= 1.0.2),
+    dplyr,
+    furrr,
+    ggplot2,
+    ggforce,
+    gridExtra,
+    lubridate,
+    readr,
+    reshape2,
+    stats
+Remotes:
+    Infectious-Disease-Modeling-Hubs/hubEnsembles,
+    Infectious-Disease-Modeling-Hubs/hubUtils,
+    reichlab/distfromq

@@ -6,14 +6,12 @@
 \usage{
 get_pmf_forecasts_from_quantile(
   quantile_forecasts,
-  reference_date,
   locations_df,
   truth_df,
   categories,
   horizons = 1,
   count_rate_multiplier,
   category_rule,
-  model_name = "UMass-trends_ensemble",
   target_name = "wk flu hosp rate change",
   save_path = NULL
 )
@@ -22,11 +20,6 @@ get_pmf_forecasts_from_quantile(
 \item{quantile_forecasts}{a data frame of quantile forecasts with the
 following columns: \code{model_id}, \code{reference_date}, \code{horizon}, \code{target},
 \code{target_end_date}, \code{output_type}, \code{output_type_id}, \code{value}}
-
-\item{reference_date}{a string containing the reference date for the forecasts
-(both being supplied and calculated) in a format recognized by \code{as.Date()},
-ideally "yyyy-mm-dd". If season is "2023-2024", the reference date will be used
-to determine which category definitions to use}
 
 \item{locations_df}{a data frame of locations to forecast for. Must contain
 the following columns: \code{geo_value} (lowercase abbreviations), \code{location}
@@ -47,8 +40,6 @@ to define categories. Must have dimension length(horizons) x length(categories)}
 \item{category_rule}{a matrix containing the values against which to compare the
 count rates used to define categories when count rates are below the specified
 values. Must have dimension length(horizons) x length(categories)}
-
-\item{model_name}{a string of the desired model name for the output forecasts}
 
 \item{target_name}{a string of the desired target name for the output forecasts}
 

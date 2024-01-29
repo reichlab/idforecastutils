@@ -21,7 +21,6 @@
 #' @param category_rule a matrix containing the values against which to compare the
 #'   count rates used to define categories when count rates are below the specified
 #'   values. Must have dimension length(horizons) x length(categories)
-#' @param model_name a string of the desired model name for the output forecasts
 #' @param target_name a string of the desired target name for the output forecasts
 #' @param save_path a string of the path to which to save the output forecasts
 #'
@@ -41,7 +40,7 @@
 #' count_rate_multiplier_2324_new <- matrix(c(c(2, 3, 4, 5), c(1, 1, 2, 2.5), c(-1, -1, -2, -2.5), c(-2, -3, -4, -5)), ncol=4)
 #' category_rule_2324_new <- matrix(c(rep(10, 4), rep(10, 4), rep(-10, 4), rep(-10, 4)), ncol=4)
 
-get_pmf_forecasts_from_quantile <- function(quantile_forecasts, reference_date, locations_df, truth_df, categories, horizons=1, count_rate_multiplier, category_rule, model_name="UMass-trends_ensemble", target_name="wk flu hosp rate change", save_path=NULL) {
+get_pmf_forecasts_from_quantile <- function(quantile_forecasts, reference_date, locations_df, truth_df, categories, horizons=1, count_rate_multiplier, category_rule, target_name="wk flu hosp rate change", save_path=NULL) {
   reference_date <- as.Date(reference_date)
   num_cat = length(categories)
   
@@ -57,11 +56,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, reference_date, 
     dplyr::ungroup() |>
     dplyr::left_join(truth_df, by=c("target_end_date"="time_value", "geo_value", "value")) |>
     dplyr::inner_join(location_data, by = c("geo_value"))  |>
-    dplyr::mutate(
-      model_id="Observed Data",
-      target_variable=target_name,
-      .before=1
-    )
+    dplyr::mutate(model_id="Observed Data", target_variable=target_name, .before=1)
   
   truth_df_temp <- truth_df_all 
   truth_df_all <- NULL
@@ -89,7 +84,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, reference_date, 
   train_forecasts <- truth_df_recent <- truth_df_all |>
     dplyr::filter(target_end_date == recent_date) |>
     dplyr::select(location_name, location, horizon,target_variable, population, crit1:ncol(truth_df_all)) |>
-    dplyr::mutate(model_id=model_name, date = as.Date(reference_date), .before = 1) 
+    dplyr::mutate(date = as.Date(reference_date), .before = 1) 
   
 
   # list of locations
@@ -113,7 +108,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, reference_date, 
         quantile_forecasts_adjusted,
         by = c("date"="reference_date", "horizon", "location")
       ) |>
-      dplyr::group_by(date, location, horizon, target, target_end_date) |>
+      dplyr::group_by(model_id, date, location, horizon, target, target_end_date) |>
       dplyr::summarize(
         cdf_crit_current = distfromq::make_p_fn(
           ps = output_type_id,
@@ -127,8 +122,13 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, reference_date, 
   #calculate percentages, correcting for negative numbers
   exp_forecast <- train_forecasts |>
     dplyr::ungroup() |>
+    dplyr::inner_join(
+      train_temp,
+      by = c("date", "horizon", "location")
+    ) |>
     dplyr::rename(reference_date=date, target=target_variable) |>
     dplyr::mutate(cdf_crit0=1, .before=cdf_crit1)
+
   exp_forecast[[paste0("cdf_crit", num_cat)]] <- exp_forecast[[paste0("crit", num_cat)]] <- 0
   cdf_crit_sum <- 0
   for (i in 1:(num_cat)) {

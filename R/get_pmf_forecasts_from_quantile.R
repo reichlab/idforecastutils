@@ -18,7 +18,6 @@
 #'   count rates used to define categories when count rates are below the specified
 #'   values. Must have dimension length(horizons) x length(categories)
 #' @param target_name a string of the desired target name for the output forecasts
-#' @param save_path a string of the path to which to save the output forecasts
 #'
 #' @return a `model_out_tbl` of both pmf and quantile forecasts constructed from the 
 #'   input quantile forecasts with the following columns: `model_id`, `location`,
@@ -36,13 +35,12 @@
 #' count_rate_multiplier_2324_new <- matrix(c(c(2, 3, 4, 5), c(1, 1, 2, 2.5), c(-1, -1, -2, -2.5), c(-2, -3, -4, -5)), ncol=4)
 #' category_rule_2324_new <- matrix(c(rep(10, 4), rep(10, 4), rep(-10, 4), rep(-10, 4)), ncol=4)
 
-get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, truth_df, categories, horizons=1, count_rate_multiplier, category_rule, target_name="wk flu hosp rate change", save_path=NULL) {
+get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, truth_df, categories, horizons=1, count_rate_multiplier, category_rule, target_name="wk flu hosp rate change") {
   num_cat = length(categories)
   
   truth_df_all <- truth_df |>
     dplyr::rename(target_end_date = time_value) |>
     dplyr::ungroup() |>
-    dplyr::left_join(truth_df, by=c("target_end_date"="time_value", "geo_value", "value")) |>
     dplyr::inner_join(location_data, by = c("geo_value"))  |>
     dplyr::mutate(model_id="Observed Data", target_variable=target_name, .before=1)
   
@@ -71,18 +69,13 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
     dplyr::mutate(date=target_end_date+weeks(1), target_end_date = date+weeks(horizon), .before = 3) 
   
 
-  # list of locations
-  the_locations <- truth_df_filtered |>
-    dplyr::distinct(location, .keep_all=TRUE) |>
-    pull(location) #states, us and territories
-
   # extract log pdf and cdf values for training set forecasts
   # we add a little noise to the value column so that there is a density to
   # work with in case the forecaster had a point mass anywhere
   quantile_forecasts_adjusted <- quantile_forecasts |>
     dplyr::mutate(
       reference_date=as.Date(reference_date),
-      value = rnorm(n = nrow(quantile_forecasts), mean = value, sd = 0.1)
+      value = stats::rnorm(n = nrow(quantile_forecasts), mean = value, sd = 0.1)
     ) 
     
   truth_df_filtered <- truth_df_filtered |>
@@ -150,11 +143,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
     ) |>
     dplyr::bind_rows(mutate(quantile_forecasts, output_type_id=as.character(output_type_id)))|>
     dplyr::filter(location %in% pull(locations_df, location)) |>
-    dplyr::select(reference_date, horizon, target, target_end_date, location, output_type, output_type_id, value)
-
-  if (!is.null(save_path)) {
-    readr::write_csv(output_forecasts, save_path)
-  }
+    dplyr::select(model_id, reference_date, horizon, target, target_end_date, location, output_type, output_type_id, value)
 
   return (output_forecasts)
 }

@@ -12,8 +12,7 @@ get_pmf_forecasts_from_quantile(
   horizons = 1,
   count_rate_multiplier,
   category_rule,
-  target_name = "wk flu hosp rate change",
-  save_path = NULL
+  target_name = "wk flu hosp rate change"
 )
 }
 \arguments{
@@ -42,8 +41,6 @@ count rates used to define categories when count rates are below the specified
 values. Must have dimension length(horizons) x length(categories)}
 
 \item{target_name}{a string of the desired target name for the output forecasts}
-
-\item{save_path}{a string of the path to which to save the output forecasts}
 }
 \value{
 a \code{model_out_tbl} of both pmf and quantile forecasts constructed from the

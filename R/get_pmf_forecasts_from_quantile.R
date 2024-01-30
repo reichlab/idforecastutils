@@ -39,20 +39,6 @@
 get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, truth_df, categories, horizons=1, count_rate_multiplier, category_rule, target_name="wk flu hosp rate change", save_path=NULL) {
   num_cat = length(categories)
   
-  #Important dates used
-  last_truth_saturday <- truth_df |>
-    dplyr::ungroup() |>
-    dplyr::distinct(time_value, .keep_all = TRUE) |>
-    dplyr::mutate(day = lubridate::wday(time_value, label=TRUE, abbr=TRUE)) |>
-    dplyr::filter(day=="Sat") |>
-    dplyr::slice_max(time_value, n = 1) |>
-    dplyr::pull(time_value)
-  
-  last_eval_sat <- last_truth_saturday
-  this_monday=last_eval_sat+2
-  prior_eval_sat=last_eval_sat-7
-  prior_10wk_eval_sat=last_eval_sat-70
-
   truth_df_all <- truth_df |>
     dplyr::rename(target_end_date = time_value) |>
     dplyr::ungroup() |>
@@ -80,13 +66,13 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
     dplyr::select(model_id, location_name, location, value, target_end_date, horizon,target_variable, population, crit1:ncol(truth_df_all)) |>
     dplyr::filter(!is.na(value))
 
-  train_forecasts <- truth_df_recent <- truth_df_all |>
+  train_forecasts <- truth_df_filtered <- truth_df_all |>
     dplyr::select(location_name, location, horizon, target_end_date, target_variable, population, crit1:ncol(truth_df_all)) |>
     dplyr::mutate(date=target_end_date+weeks(1), target_end_date = date+weeks(horizon), .before = 3) 
   
 
   # list of locations
-  the_locations <- truth_df_recent |>
+  the_locations <- truth_df_filtered |>
     dplyr::distinct(location, .keep_all=TRUE) |>
     pull(location) #states, us and territories
 
@@ -99,19 +85,19 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
       value = rnorm(n = nrow(quantile_forecasts), mean = value, sd = 0.1)
     ) 
     
-  truth_df_recent <- truth_df_recent |>
+  truth_df_filtered <- truth_df_filtered |>
     dplyr::inner_join(
       quantile_forecasts_adjusted,
       by = c("date"="reference_date", "horizon", "target_end_date", "location")
     ) 
 
-  train_forecasts <- truth_df_recent |>
+  train_forecasts <- truth_df_filtered |>
     dplyr::distinct(model_id, location, location_name, date, horizon, target_variable, .keep_all=TRUE) |>
     dplyr::select(-target, -output_type,-output_type_id,-value)
     
   for (i in 1:(num_cat-1)) {
-    truth_df_recent[["crit_current"]] <- truth_df_recent[[paste0("crit", i, sep="")]] 
-    train_temp <- truth_df_recent |>
+    truth_df_filtered[["crit_current"]] <- truth_df_filtered[[paste0("crit", i, sep="")]] 
+    train_temp <- truth_df_filtered |>
       dplyr::group_by(model_id, date, location, horizon, target, target_end_date) |>
       dplyr::summarize(
         cdf_crit_current = distfromq::make_p_fn(

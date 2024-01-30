@@ -1,8 +1,8 @@
 #' Obtain pmf forecasts from quantile forecasts for flu hosp rate change categories
 #'
-#' @param quantile_forecasts a data frame of quantile forecasts with the 
-#'   following columns: `model_id`, `reference_date`, `horizon`, `target`, 
-#'   `target_end_date`, `output_type`, `output_type_id`, `value`
+#' @param quantile_forecasts a `model_out_tbl` of quantile forecasts with the 
+#'   following columns: `model_id`, `location`, `reference_date`, `horizon`, 
+#'   `target`, `target_end_date`, `output_type`, `output_type_id`, `value`
 #' @param locations_df a data frame of locations to forecast for. Must contain 
 #'   the following columns: `geo_value` (lowercase abbreviations), `location` 
 #'   (fips codes), location_name (full name), and `population`
@@ -20,8 +20,8 @@
 #' @param target_name a string of the desired target name for the output forecasts
 #' @param save_path a string of the path to which to save the output forecasts
 #'
-#' @return a data frame of both pmf and quantile forecasts constructed from the 
-#'   input quantile forecasts with the following columns: `model_id`, 
+#' @return a `model_out_tbl` of both pmf and quantile forecasts constructed from the 
+#'   input quantile forecasts with the following columns: `model_id`, `location`,
 #'   `reference_date`, `horizon`, `target`, `target_end_date`, `output_type`, 
 #'   `output_type_id`, `value`
 #' @export

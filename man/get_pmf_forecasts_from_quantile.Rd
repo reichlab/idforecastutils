@@ -17,9 +17,9 @@ get_pmf_forecasts_from_quantile(
 )
 }
 \arguments{
-\item{quantile_forecasts}{a data frame of quantile forecasts with the
-following columns: \code{model_id}, \code{reference_date}, \code{horizon}, \code{target},
-\code{target_end_date}, \code{output_type}, \code{output_type_id}, \code{value}}
+\item{quantile_forecasts}{a \code{model_out_tbl} of quantile forecasts with the
+following columns: \code{model_id}, \code{location}, \code{reference_date}, \code{horizon},
+\code{target}, \code{target_end_date}, \code{output_type}, \code{output_type_id}, \code{value}}
 
 \item{locations_df}{a data frame of locations to forecast for. Must contain
 the following columns: \code{geo_value} (lowercase abbreviations), \code{location}
@@ -46,8 +46,8 @@ values. Must have dimension length(horizons) x length(categories)}
 \item{save_path}{a string of the path to which to save the output forecasts}
 }
 \value{
-a data frame of both pmf and quantile forecasts constructed from the
-input quantile forecasts with the following columns: \code{model_id},
+a \code{model_out_tbl} of both pmf and quantile forecasts constructed from the
+input quantile forecasts with the following columns: \code{model_id}, \code{location},
 \code{reference_date}, \code{horizon}, \code{target}, \code{target_end_date}, \code{output_type},
 \code{output_type_id}, \code{value}
 }

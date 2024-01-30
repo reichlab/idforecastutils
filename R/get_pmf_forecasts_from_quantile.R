@@ -5,7 +5,7 @@
 #'   `target`, `target_end_date`, `output_type`, `output_type_id`, `value`
 #' @param locations_df a data frame of locations to forecast for. Must contain 
 #'   the following columns: `geo_value` (lowercase abbreviations), `location` 
-#'   (fips codes), location_name (full name), and `population`
+#'   (fips codes), and `population`
 #' @param truth_df a data frame of truth data with the following columns: 
 #'   `geo_value`, `time_value`, `value`
 #' @param categories a vector of strings containing category names (without spaces).
@@ -44,6 +44,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
     dplyr::inner_join(location_data, by = c("geo_value"))  |>
     dplyr::mutate(model_id="Observed Data", target_variable=target_name, .before=1)
   
+  # Calculate category boundary values
   truth_df_temp <- truth_df_all 
   truth_df_all <- NULL
   for (j in 1:length(horizons)) {
@@ -61,11 +62,11 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
   }
 
   truth_df_all <- truth_df_all |>
-    dplyr::select(model_id, location_name, location, value, target_end_date, horizon,target_variable, population, crit1:ncol(truth_df_all)) |>
+    dplyr::select(model_id, location, value, target_end_date, horizon,target_variable, population, crit1:ncol(truth_df_all)) |>
     dplyr::filter(!is.na(value))
 
   train_forecasts <- truth_df_filtered <- truth_df_all |>
-    dplyr::select(location_name, location, horizon, target_end_date, target_variable, population, crit1:ncol(truth_df_all)) |>
+    dplyr::select(location, horizon, target_end_date, target_variable, population, crit1:ncol(truth_df_all)) |>
     dplyr::mutate(date=target_end_date+weeks(1), target_end_date = date+weeks(horizon), .before = 3) 
   
 
@@ -78,16 +79,19 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
       value = stats::rnorm(n = nrow(quantile_forecasts), mean = value, sd = 0.1)
     ) 
     
+  # filter for dates, horizons, locations to forecast for
   truth_df_filtered <- truth_df_filtered |>
     dplyr::inner_join(
       quantile_forecasts_adjusted,
       by = c("date"="reference_date", "horizon", "target_end_date", "location")
     ) 
 
+  # filter for dates, horizons, locations to forecast for (no distinct output_type_ids)
   train_forecasts <- truth_df_filtered |>
-    dplyr::distinct(model_id, location, location_name, date, horizon, target_variable, .keep_all=TRUE) |>
+    dplyr::distinct(model_id, location, date, horizon, target_variable, .keep_all=TRUE) |>
     dplyr::select(-target, -output_type,-output_type_id,-value)
     
+  # Calculate cdf category boundary values
   for (i in 1:(num_cat-1)) {
     truth_df_filtered[["crit_current"]] <- truth_df_filtered[[paste0("crit", i, sep="")]] 
     train_temp <- truth_df_filtered |>
@@ -102,7 +106,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
     train_forecasts[[paste0("cdf_crit", i)]] <- train_temp[["cdf_crit_current"]]
   }
   
-  #calculate percentages, correcting for negative numbers
+  #calculate category percentages from cdf criteria, correcting for negative numbers
   exp_forecast <- train_forecasts |>
     dplyr::ungroup() |>
     dplyr::rename(reference_date=date, target=target_variable) |>
@@ -120,23 +124,22 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
   }
 
   exp_forecast <- exp_forecast |>
-    dplyr::select(model_id,reference_date,location,location_name, horizon, all_of(categories))
+    dplyr::select(model_id,reference_date,location,horizon, all_of(categories))
   
 
   #transpose data_frame to format for submission
   exp_t = melt(
     exp_forecast,
-    id.vars = c("model_id","reference_date","location","location_name","horizon"),
+    id.vars = c("model_id","reference_date","location","","horizon"),
     measure.vars = categories,
     variable.name="output_type_id",
     value.name="value"
   )
   exp_t <- exp_t |>
     dplyr::mutate(target=target_name, output_type="pmf") |>
-    dplyr::select(model_id, reference_date, horizon, target, location, location_name, output_type, output_type_id, value)
+    dplyr::select(model_id, reference_date, horizon, target, location, output_type, output_type_id, value)
 
   output_forecasts <- exp_t |>
-    dplyr::select(-location_name) |>
     dplyr::mutate(
       output_type_id=as.character(output_type_id),
       target_end_date=reference_date+weeks(horizon)

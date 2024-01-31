@@ -41,7 +41,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
   truth_df_all <- truth_df |>
     dplyr::rename(target_end_date = time_value) |>
     dplyr::ungroup() |>
-    dplyr::inner_join(location_data, by = c("geo_value"))  |>
+    dplyr::inner_join(locations_df, by = c("geo_value"))  |>
     dplyr::mutate(model_id="Observed Data", target_variable=target_name, .before=1)
   
   # Calculate category boundary values

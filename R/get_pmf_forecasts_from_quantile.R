@@ -45,28 +45,28 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
     dplyr::mutate(model_id="Observed Data", target_variable=target_name, .before=1)
   
   # Calculate category boundary values
-  truth_df_temp <- truth_df_all 
-  truth_df_all <- NULL
+  criteria_df_temp <- truth_df_all 
+  criteria_df_all <- NULL
   for (j in 1:length(horizons)) {
-    truth_df_temp[["horizon"]] <- horizons[j]
+    criteria_df_temp[["horizon"]] <- horizons[j]
     for (i in 1:(num_cat-1)) {
-      truth_df_temp[[paste("crit", i, sep="")]] <-
+      criteria_df_temp[[paste("crit", i, sep="")]] <-
         ifelse(
-          abs(truth_df_temp[["population"]]*count_rate_multiplier[j,i]/100000) < abs(category_rule[j,i]), 
-          truth_df_temp[["value"]] + category_rule[j,i], 
-          truth_df_temp[["value"]] + 
-            round(truth_df_temp[["population"]]*count_rate_multiplier[j,i]/100000, digits=0)
+          abs(criteria_df_temp[["population"]]*count_rate_multiplier[j,i]/100000) < abs(category_rule[j,i]), 
+          criteria_df_temp[["value"]] + category_rule[j,i], 
+          criteria_df_temp[["value"]] + 
+            round(criteria_df_temp[["population"]]*count_rate_multiplier[j,i]/100000, digits=0)
         )
     }
-    truth_df_all <- rbind(truth_df_all, truth_df_temp)
+    criteria_df_all <- rbind(criteria_df_all, criteria_df_temp)
   }
 
-  truth_df_all <- truth_df_all |>
-    dplyr::select(model_id, location, value, target_end_date, horizon,target_variable, population, crit1:ncol(truth_df_all)) |>
+  criteria_df_all <- criteria_df_all |>
+    dplyr::select(model_id, location, value, target_end_date, horizon,target_variable, population, crit1:ncol(criteria_df_all)) |>
     dplyr::filter(!is.na(value))
 
-  train_forecasts <- truth_df_filtered <- truth_df_all |>
-    dplyr::select(location, horizon, target_end_date, target_variable, population, crit1:ncol(truth_df_all)) |>
+  train_forecasts <- criteria_df_all |>
+    dplyr::select(location, horizon, target_end_date, target_variable, population, crit1:ncol(criteria_df_all)) |>
     dplyr::mutate(date=target_end_date+weeks(1), target_end_date = date+weeks(horizon), .before = 3) 
   
 
@@ -77,21 +77,21 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
     dplyr::mutate(reference_date=as.Date(reference_date)) 
     
   # filter for dates, horizons, locations to forecast for
-  truth_df_filtered <- truth_df_filtered |>
+  criteria_df_filtered <- train_forecasts |>
     dplyr::inner_join(
       quantile_forecasts,
       by = c("date"="reference_date", "horizon", "target_end_date", "location")
     ) 
 
   # filter for dates, horizons, locations to forecast for (no distinct output_type_ids)
-  train_forecasts <- truth_df_filtered |>
-    dplyr::distinct(model_id, location, date, horizon, target_variable, .keep_all=TRUE) |>
+  train_forecasts <- criteria_df_filtered |>
+    dplyr::distinct(model_id, location, date, horizon, target, .keep_all=TRUE) |>
     dplyr::select(-target, -output_type,-output_type_id,-value)
     
   # Calculate cdf category boundary values
   for (i in 1:(num_cat-1)) {
-    truth_df_filtered[["crit_current"]] <- truth_df_filtered[[paste0("crit", i, sep="")]] 
-    train_temp <- truth_df_filtered |>
+    criteria_df_filtered[["crit_current"]] <- criteria_df_filtered[[paste0("crit", i, sep="")]] 
+    train_temp <- criteria_df_filtered |>
       dplyr::group_by(model_id, date, location, horizon, target, target_end_date) |>
       dplyr::summarize(
         cdf_crit_current = distfromq::make_p_fn(
@@ -127,7 +127,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
   #transpose data_frame to format for submission
   exp_t = melt(
     exp_forecast,
-    id.vars = c("model_id","reference_date","location","","horizon"),
+    id.vars = c("model_id","reference_date","location","horizon"),
     measure.vars = categories,
     variable.name="output_type_id",
     value.name="value"

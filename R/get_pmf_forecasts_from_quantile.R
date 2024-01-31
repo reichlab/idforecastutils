@@ -73,16 +73,13 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, tr
   # extract log pdf and cdf values for training set forecasts
   # we add a little noise to the value column so that there is a density to
   # work with in case the forecaster had a point mass anywhere
-  quantile_forecasts_adjusted <- quantile_forecasts |>
-    dplyr::mutate(
-      reference_date=as.Date(reference_date),
-      value = stats::rnorm(n = nrow(quantile_forecasts), mean = value, sd = 0.1)
-    ) 
+  quantile_forecasts <- quantile_forecasts |>
+    dplyr::mutate(reference_date=as.Date(reference_date)) 
     
   # filter for dates, horizons, locations to forecast for
   truth_df_filtered <- truth_df_filtered |>
     dplyr::inner_join(
-      quantile_forecasts_adjusted,
+      quantile_forecasts,
       by = c("date"="reference_date", "horizon", "target_end_date", "location")
     ) 
 

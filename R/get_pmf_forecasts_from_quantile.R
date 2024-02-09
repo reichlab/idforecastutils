@@ -36,7 +36,65 @@
 #' category_rule_2324_new <- matrix(c(rep(10, 4), rep(10, 4), rep(-10, 4), rep(-10, 4)), ncol=4)
 
 get_pmf_forecasts_from_quantile <- function(quantile_forecasts, locations_df, truth_df, categories, horizons=1, count_rate_multiplier, category_rule, target_name="wk flu hosp rate change") {
+ 
+  # Coerce quantile_forecasts to model_out_tbl and validate
+  if (!inherits(quantile_forecasts, "model_out_tbl")) {
+    quantile_forecasts <- hubUtils::as_model_out_tbl(quantile_forecasts)
+  }
+  hubUtils::validate_model_out_tbl(quantile_forecasts)
+  
+  # Check quantile_forecasts has all required task ID columns
+  req_quantile_tasks <- c("location", "reference_date", "horizon", "target", "target_end_date")
+  if (!all(req_quantile_tasks %in% colnames(quantile_forecasts))) {
+    cli::cli_abort(c(
+      "x" = "{.arg quantile_forecasts} did not include required task ID columns
+             {.val {req_quantile_tasks}}."
+    ))
+  }
+  
+  # Check locations_df has all required columns
+  req_locations_cols <- c("geo_value", "location", "population")
+  if (!all(req_locations_cols %in% colnames(locations_df))) {
+    cli::cli_abort(c(
+      "x" = "{.arg locations_df} did not include required columns
+             {.val {req_locations_cols}}."
+    ))
+  }
+  
+  # Check truth_df has all required columns
+  req_truth_cols <- c("geo_value", "time_value", "value")
+  if (!all(req_truth_cols %in% colnames(truth_df))) {
+    cli::cli_abort(c(
+      "x" = "{.arg truth_df} did not include required columns
+             {.val {req_truth_cols}}."
+    ))
+  }
+
   num_cat = length(categories)
+  if (num_cat < 2) {
+    cli::cli_abort(c(
+      "x" = "{.arg categories} contains too few categories.",
+      "i" = "At least 2 categories should be provided"
+    ))
+  }
+  
+  # Check count_rate_multiplier and category_rule matrices have correct dimensions
+  crm_dim <- dim(count_rate_multiplier)
+  cr_dim <- dim(category_rule)
+  correct_dim <- c(length(horizons), length(categories)-1)
+  if (any(crm_dim != correct_dim)) {
+    cli::cli_abort(c(
+      "x" = "{.arg count_rate_multiplier} did not have the correct dimensions
+             {.val {correct_dim}}."
+    ))
+  }
+  if (any(cr_dim != correct_dim)) {
+    cli::cli_abort(c(
+      "x" = "{.arg category_rule} did not have the correct dimensions
+             {.val {correct_dim}}."
+    ))
+  }
+
   
   truth_df_all <- truth_df |>
     dplyr::rename(target_end_date = time_value) |>

@@ -22,7 +22,7 @@ following columns: \code{model_id}, \code{location}, \code{reference_date}, \cod
 
 \item{locations_df}{a data frame of locations to forecast for. Must contain
 the following columns: \code{geo_value} (lowercase abbreviations), \code{location}
-(fips codes), location_name (full name), and \code{population}}
+(fips codes), and \code{population}}
 
 \item{truth_df}{a data frame of truth data with the following columns:
 \code{geo_value}, \code{time_value}, \code{value}}

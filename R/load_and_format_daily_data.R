@@ -72,7 +72,6 @@ aggregate_daily_to_weekly <- function(daily_data) {
       lubridate::ceiling_date(time_value, "week") - lubridate::days(1)) |>
     dplyr::group_by(location, associated_saturday) |>
     dplyr::summarize(week_value = sum(value)) |>
-    dplyr::select(-time_value, -value) |>
     dplyr::rename(time_value = associated_saturday, value = week_value) 
 
   return(weekly_data)

@@ -114,10 +114,11 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
   c("model_id", req_quantile_tasks, "output_type", "output_type_id", "value")
     
   truth_df_all <- truth_df |>
-    dplyr::rename(target_end_date = time_value) |>
     dplyr::ungroup() |>
     dplyr::inner_join(locations_df, by = c("geo_value"))  |>
-    dplyr::mutate(model_id = "Observed Data", target_variable = target_name,
+    dplyr::mutate(model_id = "Observed Data", 
+                  reference_date = time_value + lubridate::weeks(1),
+                  target_variable = target_name,
                   .before=1)
 
   # Calculate category boundary values
@@ -139,12 +140,13 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
   }
 
   criteria_df_all <- criteria_df_all |>
-    dplyr::select(model_id, location, value, target_end_date, horizon, target_variable, population, crit1:ncol(criteria_df_all)) |>
+    dplyr::select(model_id, location, value, reference_date, horizon, target_variable, population, crit1:ncol(criteria_df_all)) |>
     dplyr::filter(!is.na(value))
 
   train_forecasts <- criteria_df_all |>
-    dplyr::select(location, horizon, target_end_date, target_variable, population, crit1:ncol(criteria_df_all)) |>
-    dplyr::mutate(date = target_end_date + lubridate::weeks(1), target_end_date = date + lubridate::weeks(horizon), .before = 3)
+    dplyr::select(location, reference_date, horizon, target_variable, population, crit1:ncol(criteria_df_all)) |>
+    dplyr::mutate(target_end_date = reference_date + lubridate::weeks(horizon),
+                  .before = target_variable)
 
 
   # extract log pdf and cdf values for training set forecasts
@@ -155,13 +157,13 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
   criteria_df_filtered <- train_forecasts |>
     dplyr::inner_join(
       quantile_forecasts,
-      by = c("date" = "reference_date", "horizon", "target_end_date", "location")
+      by = c("reference_date", "horizon", "target_end_date", "location")
     )
 
   # filter for dates, horizons, locations to forecast for
   # (no distinct output_type_ids)
   train_forecasts <- criteria_df_filtered |>
-    dplyr::distinct(model_id, location, date, horizon, target,
+    dplyr::distinct(model_id, location, reference_date, horizon, target,
                     .keep_all = TRUE) |>
     dplyr::select(-target, -output_type, -output_type_id, -value)
 
@@ -169,7 +171,8 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
   for (i in 1:(num_cat-1)) {
     criteria_df_filtered[["crit_current"]] <- criteria_df_filtered[[paste0("crit", i, sep = "")]]
     train_temp <- criteria_df_filtered |>
-      dplyr::group_by(model_id, date, location, horizon, target, target_end_date) |>
+      dplyr::group_by(model_id, reference_date, horizon, target_end_date, 
+                      target, location) |>
       dplyr::summarize(
         cdf_crit_current = distfromq::make_p_fn(
           ps = output_type_id,
@@ -183,7 +186,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
   #calculate category percentages from cdf criteria, correcting for negative numbers
   exp_forecast <- train_forecasts |>
     dplyr::ungroup() |>
-    dplyr::rename(reference_date=date, target=target_variable) |>
+    dplyr::rename(target=target_variable) |>
     dplyr::mutate(cdf_crit0=1, .before=cdf_crit1)
 
   exp_forecast[[paste0("cdf_crit", num_cat)]] <-
@@ -202,13 +205,13 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
   }
 
   exp_forecast <- exp_forecast |>
-    dplyr::select(model_id, reference_date, location, horizon, all_of(categories))
+    dplyr::select(model_id, reference_date, location, horizon, target_end_date, all_of(categories))
 
 
   #transpose data_frame to format for submission
-  exp_t <- melt(
+  exp_t <- reshape2::melt(
     exp_forecast,
-    id.vars = c("model_id", "reference_date", "location", "horizon"),
+    id.vars = c("model_id", "reference_date", "location", "horizon", "target_end_date"),
     measure.vars = categories,
     variable.name = "output_type_id",
     value.name = "value"
@@ -218,10 +221,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
     dplyr::select(dplyr::all_of(model_output_cols))
 
   output_forecasts <- exp_t |>
-    dplyr::mutate(
-      output_type_id = as.character(output_type_id),
-      target_end_date = reference_date + lubridate::weeks(horizon)
-    ) |>
+    dplyr::mutate(output_type_id = as.character(output_type_id)) |>
     dplyr::bind_rows(mutate(quantile_forecasts, 
                             output_type_id=as.character(output_type_id)))|>
     dplyr::filter(location %in% dplyr::pull(locations_df, location)) |>

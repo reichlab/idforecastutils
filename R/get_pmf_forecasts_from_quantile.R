@@ -58,7 +58,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
 
   # Check quantile_forecasts has all required task ID columns
   req_quantile_tasks <-
-    c("location", "reference_date", "horizon", "target", "target_end_date")
+    c("reference_date", "horizon", "target", "target_end_date", "location")
   if (!all(req_quantile_tasks %in% colnames(quantile_forecasts))) {
     cli::cli_abort(c(
       "x" = "{.arg quantile_forecasts} did not include required task ID columns
@@ -110,6 +110,9 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
   }
 
 
+  model_output_cols <- 
+  c("model_id", req_quantile_tasks, "output_type", "output_type_id", "value")
+    
   truth_df_all <- truth_df |>
     dplyr::rename(target_end_date = time_value) |>
     dplyr::ungroup() |>
@@ -212,7 +215,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
   )
   exp_t <- exp_t |>
     dplyr::mutate(target = target_name, output_type = "pmf") |>
-    dplyr::select(model_id, reference_date, horizon, target, location, output_type, output_type_id, value)
+    dplyr::select(dplyr::all_of(model_output_cols))
 
   output_forecasts <- exp_t |>
     dplyr::mutate(
@@ -222,7 +225,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
     dplyr::bind_rows(mutate(quantile_forecasts, 
                             output_type_id=as.character(output_type_id)))|>
     dplyr::filter(location %in% dplyr::pull(locations_df, location)) |>
-    dplyr::select(model_id, reference_date, horizon, target, target_end_date, location, output_type, output_type_id, value)
+    dplyr::select(dplyr::all_of(model_output_cols))
 
   return(output_forecasts)
 }

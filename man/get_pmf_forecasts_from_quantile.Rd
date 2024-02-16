@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_pmf_forecasts_from_quantile.R
 \name{get_pmf_forecasts_from_quantile}
 \alias{get_pmf_forecasts_from_quantile}
-\title{Obtain pmf forecasts from quantile forecasts for flu hosp rate change categories}
+\title{Obtain pmf forecasts from quantile forecasts with custom categories}
 \usage{
 get_pmf_forecasts_from_quantile(
   quantile_forecasts,
@@ -27,29 +27,32 @@ the following columns: \code{geo_value} (lowercase abbreviations), \code{locatio
 \item{truth_df}{a data frame of truth data with the following columns:
 \code{geo_value}, \code{time_value}, \code{value}}
 
-\item{categories}{a vector of strings containing category names (without spaces).}
+\item{categories}{a vector of strings containing category names (without
+spaces).}
 
-\item{horizons}{a vector of integers containing the horizons for which categories
-are defined. Defaults to 1, which should be used if categories are not
-horizon-specific.}
+\item{horizons}{a vector of integers containing the horizons for which
+categories are defined. Defaults to 1, which should be used if categories
+are not horizon-specific.}
 
-\item{count_rate_multiplier}{a matrix containing the count rate multipliers used
-to define categories. Must have dimension length(horizons) x length(categories)}
+\item{count_rate_multiplier}{a matrix containing the count rate multipliers
+used to define categories. Must have dimension length(horizons) x
+length(categories)}
 
-\item{category_rule}{a matrix containing the values against which to compare the
-count rates used to define categories when count rates are below the specified
-values. Must have dimension length(horizons) x length(categories)}
+\item{category_rule}{a matrix containing the values against which to compare
+the count rates used to define categories when count rates are below the
+specified values. Must have dimension length(horizons) x length(categories)}
 
-\item{target_name}{a string of the desired target name for the output forecasts}
+\item{target_name}{a string of the desired target name for the resulting
+pmf forecasts}
 }
 \value{
-a \code{model_out_tbl} of both pmf and quantile forecasts constructed from the
-input quantile forecasts with the following columns: \code{model_id}, \code{location},
-\code{reference_date}, \code{horizon}, \code{target}, \code{target_end_date}, \code{output_type},
-\code{output_type_id}, \code{value}
+a \code{model_out_tbl} of both pmf and quantile forecasts constructed from
+the input quantile forecasts with the following columns: \code{model_id},
+\code{location}, \code{reference_date}, \code{horizon}, \code{target}, \code{target_end_date},
+\code{output_type}, \code{output_type_id}, \code{value}
 }
 \description{
-Obtain pmf forecasts from quantile forecasts for flu hosp rate change categories
+Obtain pmf forecasts from quantile forecasts with custom categories
 }
 \examples{
 
@@ -57,7 +60,10 @@ library(distfromq)
 library(ggforce)
 library(gridExtra)
 library(reshape2)
-horizons_2324_new <- 0:3; categories <- c("large_increase", "increase", "stable", "decrease", "large_decrease")
-count_rate_multiplier_2324_new <- matrix(c(c(2, 3, 4, 5), c(1, 1, 2, 2.5), c(-1, -1, -2, -2.5), c(-2, -3, -4, -5)), ncol=4)
-category_rule_2324_new <- matrix(c(rep(10, 4), rep(10, 4), rep(-10, 4), rep(-10, 4)), ncol=4)
+horizons_2324_new <- 0:3
+categories <-
+  c("large_increase", "increase", "stable", "decrease", "large_decrease")
+count_rate_multiplier_2324_new <-
+  matrix(c(2:5, c(1, 1, 2, 2.5), c(-1, -1, -2, -2.5), -2:-5), ncol=4)
+category_rule_2324_new <- matrix(c(rep(10, 8), rep(-10, 8)), ncol=4)
 }

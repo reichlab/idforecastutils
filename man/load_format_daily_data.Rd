@@ -11,10 +11,11 @@ load_format_daily_data(disease, locations_df = NULL, due_date = NULL)
 (flu hospitalizations) or "covid" (covid hospitalizations).}
 
 \item{locations_df}{a data frame of locations to forecast for. Must contain
-the following columns: \code{geo_value} (lowercase abbreviations), and \code{location}
-(fips codes). Defaults to NULL.}
+the following columns: \code{geo_value} (lowercase abbreviations), and
+\code{location} (fips codes). Defaults to NULL.}
 
-\item{due_date}{a string specifying the date as of for which to query the data}
+\item{due_date}{a string specifying the as of date for which to query
+the data}
 }
 \value{
 a data frame of daily data for the specified disease with the

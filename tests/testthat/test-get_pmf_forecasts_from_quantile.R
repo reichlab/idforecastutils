@@ -6,11 +6,8 @@ library(tidyr)
 
 #can base this on quantile forecasts where the quantiles are from a known normal distribution, and truth/target data constructed so that the bin endpoints are easy/known quantities. this makes it so you can directly compute the probabilities using pnorm(upper, ...) - pnorm(lower, ...).
 
-test_that("(weighted) quantiles correctly calculated", {
-  # The three component models provide quantiles from the distributions
-  # F_1 = N(-3, 1), F_2 = N(0,1), and F_3 = N(3, 1)
-  # The linear pool is a (weighted) mixture with cdf F(x) = \sum_m w_m F_m(x)
-  # We test with equal weights w_m = 1/3 and with weights w_1 = 0.25, w_2 = 0.5, w_3 = 0.25
+test_that("category probabilities are correctly calculated", {
+  # Quantile forecasts have quantiles from distribution F = N(5, 5)
   location_data <- data.frame(
     stringsAsFactors = FALSE,
     geo_value = "lc",

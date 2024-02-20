@@ -111,7 +111,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
 
 
   model_output_cols <- 
-  c("model_id", req_quantile_tasks, "output_type", "output_type_id", "value")
+    c("model_id", req_quantile_tasks, "output_type", "output_type_id", "value")
     
   truth_df_all <- truth_df |>
     dplyr::ungroup() |>
@@ -191,17 +191,17 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
 
   exp_forecast[[paste0("cdf_crit", num_cat)]] <-
     exp_forecast[[paste0("crit", num_cat)]] <- 0
-  cdf_crit_sum <- 0
+  exp_forecast[["cdf_crit_sum"]] <- 0
   for (i in 1:(num_cat)) {
-    if (cdf_crit_sum < 1) {
-      exp_forecast[[categories[i]]] <-
-        exp_forecast[[paste0("cdf_crit", i-1)]] -
-          ifelse(exp_forecast[[paste0("crit", i)]] > 0,
-                 exp_forecast[[paste0("cdf_crit", i)]], 0)
-    } else {
-      exp_forecast[[categories[i]]] <- 0
-    }
-    cdf_crit_sum <- cdf_crit_sum + mean(exp_forecast[[categories[i]]])
+    exp_forecast[[categories[i]]] <-
+      ifelse(exp_forecast[["cdf_crit_sum"]] < 1,
+             ifelse(exp_forecast[[paste0("crit", i)]] > 0,
+                    exp_forecast[[paste0("cdf_crit", i-1)]] - 
+                      exp_forecast[[paste0("cdf_crit", i)]],
+                    exp_forecast[[paste0("cdf_crit", i-1)]] - 0),
+             0)
+    exp_forecast[["cdf_crit_sum"]] <- 
+      exp_forecast[["cdf_crit_sum"]] + exp_forecast[[categories[i]]]
   }
 
   exp_forecast <- exp_forecast |>

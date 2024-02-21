@@ -136,7 +136,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
             round(criteria_df_temp[["population"]] * count_rate_multiplier[j, i] / 100000, digits = 0)
         )
     }
-    criteria_df_all <- rbind(criteria_df_all, criteria_df_temp)
+    criteria_df_all <- dplyr::bind_rows(criteria_df_all, criteria_df_temp)
   }
 
   criteria_df_all <- criteria_df_all |>
@@ -151,7 +151,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
 
   # extract log pdf and cdf values for training set forecasts
   quantile_forecasts <- quantile_forecasts |>
-    dplyr::mutate(reference_date = as.Date(reference_date))
+    dplyr::mutate(reference_date = as.Date(reference_date), output_type_id = as.numeric(output_type_id))
     
   # filter for dates, horizons, locations to forecast for
   criteria_df_filtered <- train_forecasts |>
@@ -196,7 +196,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
     exp_forecast[[categories[i]]] <-
       ifelse(exp_forecast[["cdf_crit_sum"]] < 1,
              ifelse(exp_forecast[[paste0("crit", i)]] > 0,
-                    exp_forecast[[paste0("cdf_crit", i-1)]] - 
+                    exp_forecast[[paste0("cdf_crit", i-1)]] -
                       exp_forecast[[paste0("cdf_crit", i)]],
                     exp_forecast[[paste0("cdf_crit", i-1)]] - 0),
              0)

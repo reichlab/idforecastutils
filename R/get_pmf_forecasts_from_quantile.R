@@ -194,7 +194,7 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
   exp_forecast[["cdf_crit_sum"]] <- 0
   for (i in 1:(num_cat)) {
     exp_forecast[[categories[i]]] <-
-      ifelse(exp_forecast[["cdf_crit_sum"]] < 1,
+      ifelse(round(exp_forecast[["cdf_crit_sum"]], digits=10) < 1,
              ifelse(exp_forecast[[paste0("crit", i)]] > 0,
                     exp_forecast[[paste0("cdf_crit", i-1)]] -
                       exp_forecast[[paste0("cdf_crit", i)]],

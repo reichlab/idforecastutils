@@ -143,18 +143,17 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
     dplyr::select(model_id, location, value, reference_date, horizon, target_variable, population, crit1:ncol(criteria_df_all)) |>
     dplyr::filter(!is.na(value))
 
-  train_forecasts <- criteria_df_all |>
-    dplyr::select(location, reference_date, horizon, target_variable, population, crit1:ncol(criteria_df_all)) |>
-    dplyr::mutate(target_end_date = reference_date + lubridate::weeks(horizon),
-                  .before = target_variable)
-
 
   # extract log pdf and cdf values for training set forecasts
   quantile_forecasts <- quantile_forecasts |>
     dplyr::mutate(reference_date = as.Date(reference_date), output_type_id = as.numeric(output_type_id))
-    
-  # filter for dates, horizons, locations to forecast for
-  criteria_df_filtered <- train_forecasts |>
+
+  # filter criteria_df_all to only include criteria for specific
+  # dates, horizons, locations to forecast for
+  criteria_df_filtered <- criteria_df_all |>
+    dplyr::select(-model_id, -value) |>
+    dplyr::mutate(target_end_date = reference_date + lubridate::weeks(horizon),
+                  .before = target_variable) |>
     dplyr::inner_join(
       quantile_forecasts,
       by = c("reference_date", "horizon", "target_end_date", "location")
@@ -169,7 +168,8 @@ get_pmf_forecasts_from_quantile <- function(quantile_forecasts,
 
   # Calculate cdf category boundary values
   for (i in 1:(num_cat-1)) {
-    criteria_df_filtered[["crit_current"]] <- criteria_df_filtered[[paste0("crit", i, sep = "")]]
+    criteria_df_filtered[["crit_current"]] <- 
+      criteria_df_filtered[[paste0("crit", i, sep = "")]]
     train_temp <- criteria_df_filtered |>
       dplyr::group_by(model_id, reference_date, horizon, target_end_date, 
                       target, location) |>

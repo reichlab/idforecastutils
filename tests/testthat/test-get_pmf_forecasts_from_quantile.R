@@ -28,7 +28,7 @@ quantile_inputs <- data.frame(
   output_type_id = rep(NA, 21),
   value = NA_real_)
 
-quantile_values <- runif(21, 0, 10) |> sort()
+quantile_values <- runif(21, -1, 10) |> sort()
 output_prob <- seq(from=0, to=1, by=0.05)
 quantile_inputs$value <- quantile_values
 quantile_inputs$output_type_id <- output_prob
@@ -40,13 +40,13 @@ category_rule <- matrix(c(9, 7, 3, 1), ncol=4)
 criteria <- c(9, 7, 3, 1) # population * count_rate_multiplier
 
 test_that("category probabilities sum to 1", {
-  
   pmf_output <- get_pmf_forecasts_from_quantile(quantile_inputs, location_data, truth_data, categories, horizons=1, count_rate_multiplier, category_rule, target_name="death rate change") 
 
   pmf_output |>
     dplyr::filter(output_type == "pmf") |>
     dplyr::group_by(model_id, reference_date, horizon, target, target_end_date, location) |>
     dplyr::summarize(prob_sum = sum(value)) |>
+    dplyr::ungroup() |>
     dplyr::distinct(prob_sum) |>
     dplyr::pull(prob_sum) |>
     expect_equal(1)
@@ -83,8 +83,8 @@ test_that("category probabilities are correctly calculated", {
   
   pmf_actual <- get_pmf_forecasts_from_quantile(quantile_inputs, location_data, truth_data, categories, horizons=1, count_rate_multiplier, category_rule, target_name="death rate change") 
 
-  expect_equal(rbind(pmf_expected, quantile_inputs) |> as_model_out_tbl(),
-               pmf_actual|> as_model_out_tbl(),
+  expect_equal(rbind(pmf_expected, quantile_inputs) |> hubUtils::as_model_out_tbl(),
+               pmf_actual|> hubUtils::as_model_out_tbl(),
                tolerance=1e-3)
 })
 

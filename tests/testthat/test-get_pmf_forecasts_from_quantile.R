@@ -38,7 +38,7 @@ horizons <- 1
 categories <- c("large_increase", "increase", "stable", "decrease", "large_decrease")
 count_rate_multiplier <- matrix(c(4, 2, -2, -4), ncol=4)
 category_rule <- matrix(c(4, 2, -2, -4), ncol=4)
-criteria <- c(4, 2, -2, -4) # population * count_rate_multiplier
+criteria <- c(4, 2, -2, -4)
 
 test_that("category probabilities sum to 1", {
   pmf_output <- get_pmf_forecasts_from_quantile(quantile_inputs, location_data, truth_data, categories, horizons=1, count_rate_multiplier, category_rule, target_name="death rate change") 
@@ -52,8 +52,6 @@ test_that("category probabilities sum to 1", {
     dplyr::pull(prob_sum) |>
     expect_equal(1)
 })
-
-#can base this on quantile forecasts where the quantiles are from a known normal distribution, and truth/target data constructed so that the bin endpoints are easy/known quantities. this makes it so you can directly compute the probabilities using pnorm(upper, ...) - pnorm(lower, ...).
 
 test_that("category probabilities are correctly calculated", {
   # Quantile forecasts have quantiles from distribution F = N(5, 5)
@@ -69,7 +67,7 @@ test_that("category probabilities are correctly calculated", {
     output_type_id = rep(NA, 21),
     value = NA_real_)
   
-  quantile_values <- seq(from = 0, to = 10, by = 0.5) # expected
+  quantile_values <- seq(from = 0, to = 10, by = 0.5)
   output_prob <- stats::pnorm(quantile_values, mean = 5, 5)
   quantile_inputs$value <- quantile_values
   quantile_inputs$output_type_id <- output_prob
@@ -102,19 +100,3 @@ test_that("category probabilities are correctly calculated", {
                tolerance=1e-3)
 })
 
-
-
-# Check `quantile_forecasts` is a `model_out_tbl` with columns `model_id`, `reference_date`, `horizon`, `target`, `target_end_date`, `output_type`, `output_type_id`, `value`
-# Check `locations_df` is a data frame of locations to forecast for with columns `geo_value`, `location`, `location_name`, `population`
-  # Should we have NULL default with `hubUtils` locations datasets? They don't have a population column though
-# Check truth_df is a data frame with columns `geo_value`, `time_value`, `value`
-# Check `categories` has length > 1?
-# Check `horizons` is numeric; also check the default of horizons = 1 works
-# Check `count_rate_multiplier` is a numeric matrix of dimension length (horizons) x length (categories)
-# Check `category_rule` is a numeric matrix of dimension length (horizons) x length (categories); add default value or way to not use?
-
-# Test function works with old format of forecast_date (we require hubverse format otherwise)
-# Test function works with multiple models in `quantile_forecasts`
-# Test function works with multiple reference dates in `quantile_forecasts`
-
-# Options for other task_id variables?

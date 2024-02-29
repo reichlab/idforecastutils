@@ -5,16 +5,17 @@ library(tidyr)
 
 location_data <- data.frame(
   stringsAsFactors = FALSE,
-  geo_value = "lc",
-  location = "111",
-  population = 1)
+  geo_value = c("aa", "bb"),
+  location = c("111", "222"),
+  population = c(100000, 110000))
   
-truth_data <- data.frame(
+truth_data <- expand.grid(
   stringsAsFactors = FALSE,
-  geo_value = "lc",
-  time_value = as.Date("2021-12-18"),
+  geo_value = c("aa", "bb"),
+  time_value = c(as.Date("2021-12-11"), as.Date("2021-12-18")),
   target = "inc death", #assume the target is the same
-  value = 0)
+  value = NA)
+truth_data$value = c(6, 7, 5, 6)
   
 quantile_inputs <- data.frame(
   stringsAsFactors = FALSE,
@@ -25,19 +26,19 @@ quantile_inputs <- data.frame(
   target = "inc death",
   target_end_date = as.Date("2022-01-01"),
   output_type = "quantile",
-  output_type_id = rep(NA, 21),
+  output_type_id = rep(NA, 5),
   value = NA_real_)
 
-quantile_values <- runif(21, -1, 10) |> sort()
-output_prob <- seq(from=0, to=1, by=0.05)
+quantile_values <- runif(5, -5, 15) |> sort()
+output_prob <- seq(from=0, to=1, by=0.25)
 quantile_inputs$value <- quantile_values
 quantile_inputs$output_type_id <- output_prob
 
 horizons <- 1 
 categories <- c("large_increase", "increase", "stable", "decrease", "large_decrease")
-count_rate_multiplier <- matrix(c(9, 7, 3, 1), ncol=4)
-category_rule <- matrix(c(9, 7, 3, 1), ncol=4)
-criteria <- c(9, 7, 3, 1) # population * count_rate_multiplier
+count_rate_multiplier <- matrix(c(4, 2, -2, -4), ncol=4)
+category_rule <- matrix(c(4, 2, -2, -4), ncol=4)
+criteria <- c(4, 2, -2, -4) # population * count_rate_multiplier
 
 test_that("category probabilities sum to 1", {
   pmf_output <- get_pmf_forecasts_from_quantile(quantile_inputs, location_data, truth_data, categories, horizons=1, count_rate_multiplier, category_rule, target_name="death rate change") 
@@ -56,6 +57,18 @@ test_that("category probabilities sum to 1", {
 
 test_that("category probabilities are correctly calculated", {
   # Quantile forecasts have quantiles from distribution F = N(5, 5)
+  quantile_inputs <- data.frame(
+    stringsAsFactors = FALSE,
+    model_id = "quantile-model",
+    location = "111",
+    reference_date = as.Date("2021-12-25"),
+    horizon = 1,
+    target = "inc death",
+    target_end_date = as.Date("2022-01-01"),
+    output_type = "quantile",
+    output_type_id = rep(NA, 21),
+    value = NA_real_)
+  
   quantile_values <- seq(from = 0, to = 10, by = 0.5) # expected
   output_prob <- stats::pnorm(quantile_values, mean = 5, 5)
   quantile_inputs$value <- quantile_values
@@ -74,10 +87,11 @@ test_that("category probabilities are correctly calculated", {
     value = NA_real_)
 
   upper_prob <- 1; criteria <- c(criteria, -1e3)
+  truth_value <- truth_data$value[3]
   for (i in 1:length(categories)) {
     pmf_expected$value[pmf_expected$output_type_id == categories[i]] <-
-      upper_prob - pnorm(criteria[i], 5, 5, lower.tail = T)
-    upper_prob <- pnorm(criteria[i], 5, 5, lower.tail = T)
+      upper_prob - pnorm(criteria[i] + truth_value, 5, 5, lower.tail = T)
+    upper_prob <- pnorm(criteria[i] + truth_value, 5, 5, lower.tail = T)
   }
   attr(pmf_expected, 'out.attrs') <- NULL
   

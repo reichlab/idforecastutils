@@ -32,7 +32,7 @@
 transform_quantile_to_pmf <- function(model_out_tbl,
                                       bin_endpoints,
                                       tail_dist = "norm") {
-  val_transform_q_to_p_args(model_out_tbl, bin_endpoints)
+  model_out_tbl <- val_transform_q_to_p_args(model_out_tbl, bin_endpoints)
   do_transform_q_to_p(model_out_tbl, bin_endpoints, tail_dist)
 }
 
@@ -115,6 +115,8 @@ val_transform_q_to_p_args <- function(model_out_tbl, bin_endpoints) {
   val_bin_endpoint_colnames(model_out_tbl, bin_endpoints, task_id_cols)
   val_bin_endpoint_task_groups(model_out_tbl, bin_endpoints, task_id_cols)
   val_bin_endpoint_lower_upper(bin_endpoints, task_id_cols)
+
+  return(model_out_tbl)
 }
 
 #' Validate the column names of bin_endpoint

@@ -15,6 +15,8 @@
 #' extrapolation into the tails of the predictive distribution. See the details
 #' for more information.
 #'
+#' @return model_out_tbl with pmf forecasts
+#'
 #' @details Bin probabilities are calculated by taking a difference of values of
 #' the estimated CDF at the lower and upper endpoints of each bin. This means
 #' that probabilities are for half-open intervals of the form (lower, upper].
@@ -24,7 +26,33 @@
 #' members of a specified parametric family (by default, normal distributions)
 #' to extrapolate into the tails. See [distfromq::make_p_fn] for details.
 #'
-#' @return model_out_tbl with pmf forecasts
+#' @examplesIf requireNamespace("hubExamples", quietly = TRUE)
+#' # We illustrate getting bin probabilities with different bin endpoints for
+#' # each location. We bin hospital admissions into categories of "low",
+#' # "moderate", "high", and "very high", with the bin endpoints equal to
+#' # 2.5, 5, and 7.5 hospitalizations per 100,000 population, based on the
+#' # populations of Massachusetts (FIPS code 25) and Texas (FIPS code 48)
+#' # as reported by the US Census for 2022.
+#' # Because the used bins are of the half-open form (lower, upper), we use
+#' # -Inf for the lower bin endpoint of the "low" category to capture the
+#' # full predicted probability of that bin.
+#' state_pops <- c("25" = 6981974, "48" = 30029572)
+#' lower_multipliers <- c("low" = -Inf, "moderate" = 2.5, "high" = 5.0, "very high" = 7.5)
+#' upper_multipliers <- c("low" = 2.5, "moderate" = 5.0, "high" = 7.5, "very high" = Inf)
+#' bin_endpoints <- expand.grid(
+#'   location = c("25", "48"),
+#'   output_type_id = c("low", "moderate", "high", "very high"),
+#'   stringsAsFactors = FALSE
+#' ) |> dplyr::mutate(
+#'   lower = lower_multipliers[output_type_id] * state_pops[location] / 100000,
+#'   upper = upper_multipliers[output_type_id] * state_pops[location] / 100000
+#' )
+#'
+#' pmf_outputs <- transform_quantile_to_pmf(
+#'   model_out_tbl = hubExamples::forecast_outputs |>
+#'     dplyr::filter(output_type == "quantile"),
+#'   bin_endpoints = bin_endpoints
+#' )
 #'
 #' @export
 #'
@@ -110,6 +138,12 @@ val_transform_q_to_p_args <- function(model_out_tbl, bin_endpoints) {
   if (!inherits(model_out_tbl, "model_out_tbl")) {
     model_out_tbl <- hubUtils::as_model_out_tbl(model_out_tbl)
   }
+  unique_output_types <- unique(model_out_tbl$output_type)
+  if (! "quantile" %in% unique_output_types) {
+    cli::cli_abort("{.arg model_out_tbl} must contain predictions with output type 'quantile'.")
+  }
+  model_out_tbl <- model_out_tbl |> dplyr::filter(.data[["output_type"]] == "quantile")
+
   task_id_cols <- get_task_id_cols(model_out_tbl)
 
   if (!is.data.frame(bin_endpoints)) {

@@ -24,6 +24,43 @@ test_that("transform_quantile_to_pmf works, shared bin endpoints", {
 })
 
 
+test_that("transform_quantile_to_pmf works, model_out_tbl contains extra output types", {
+  bin_endpoints <- data.frame(
+    output_type_id = c("low", "med", "high"),
+    stringsAsFactors = FALSE
+  )
+  bin_endpoints$lower <- c(-Inf, 40, 80)
+  bin_endpoints$upper <- c(40, 80, Inf)
+
+  test_data <- test_q_p_model_outputs(bin_endpoints)
+  q_model_outputs <- test_data$q_model_outputs
+  expected_p_model_outputs <- test_data$p_model_outputs
+
+  test_model_outputs <- dplyr::bind_rows(
+    q_model_outputs,
+    q_model_outputs |>
+      dplyr::filter(
+        output_type_id == 0.5
+      ) |>
+      dplyr::mutate(
+        output_type_id = NA_real_,
+        output_type = "median"
+      )
+  )
+  actual_p_model_outputs <- transform_quantile_to_pmf(test_model_outputs, bin_endpoints)
+
+  # same column names, number of rows, and probability values
+  expect_equal(colnames(actual_p_model_outputs), colnames(expected_p_model_outputs))
+  expect_equal(nrow(actual_p_model_outputs), nrow(expected_p_model_outputs))
+  merged_p_model_outputs <- dplyr::full_join(
+    actual_p_model_outputs, expected_p_model_outputs,
+    by = c("model_id", "location", "age_group", "output_type", "output_type_id")
+  )
+  expect_equal(nrow(actual_p_model_outputs), nrow(merged_p_model_outputs))
+  expect_equal(merged_p_model_outputs$value.x, merged_p_model_outputs$value.y, tolerance = 1e-12)
+})
+
+
 test_that("transform_quantile_to_pmf works, bin endpoints depend on task id variable", {
   bin_endpoints <- expand.grid(
     output_type_id = c("low", "med", "high"),
@@ -67,6 +104,26 @@ test_that("transform_quantile_to_pmf errors if model_out_tbl is not convertible 
   expect_error(
     suppressMessages(transform_quantile_to_pmf(q_model_outputs |> select(-model_id), bin_endpoints)),
     regexp = "Cannot create `model_id` column."
+  )
+})
+
+
+test_that("transform_quantile_to_pmf errors if model_out_tbl does not have quantile output type", {
+  bin_endpoints <- expand.grid(
+    output_type_id = c("low", "med", "high"),
+    age_group = c("0-18", "19-65", "66+"),
+    stringsAsFactors = FALSE
+  )
+  bin_endpoints$lower <- c(-Inf, 20, 40, -Inf, 40, 80, -Inf, 50, 100)
+  bin_endpoints$upper <- c(20, 40, Inf, 40, 80, Inf, 50, 100, Inf)
+
+  test_data <- test_q_p_model_outputs(bin_endpoints)
+  q_model_outputs <- test_data$q_model_outputs
+  expected_p_model_outputs <- test_data$p_model_outputs
+
+  expect_error(
+    suppressMessages(transform_quantile_to_pmf(q_model_outputs |> dplyr::mutate(output_type = "mean"))),
+    regexp = "`model_out_tbl` must contain predictions with output type 'quantile'."
   )
 })
 

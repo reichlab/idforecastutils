@@ -43,3 +43,33 @@ we use a monotonic cubic spline to interpolate the quantiles, and use
 members of a specified parametric family (by default, normal distributions)
 to extrapolate into the tails. See \link[distfromq:make_p_fn]{distfromq::make_p_fn} for details.
 }
+\examples{
+\dontshow{if (requireNamespace("hubExamples", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# We illustrate getting bin probabilities with different bin endpoints for
+# each location. We bin hospital admissions into categories of "low",
+# "moderate", "high", and "very high", with the bin endpoints equal to
+# 2.5, 5, and 7.5 hospitalizations per 100,000 population, based on the
+# populations of Massachusetts (FIPS code 25) and Texas (FIPS code 48)
+# as reported by the US Census for 2022.
+# Because the used bins are of the half-open form (lower, upper), we use
+# -Inf for the lower bin endpoint of the "low" category to capture the
+# full predicted probability of that bin.
+state_pops <- c("25" = 6981974, "48" = 30029572)
+lower_multipliers <- c("low" = -Inf, "moderate" = 2.5, "high" = 5.0, "very high" = 7.5)
+upper_multipliers <- c("low" = 2.5, "moderate" = 5.0, "high" = 7.5, "very high" = Inf)
+bin_endpoints <- expand.grid(
+  location = c("25", "48"),
+  output_type_id = c("low", "moderate", "high", "very high"),
+  stringsAsFactors = FALSE
+) |> dplyr::mutate(
+  lower = lower_multipliers[output_type_id] * state_pops[location] / 100000,
+  upper = upper_multipliers[output_type_id] * state_pops[location] / 100000
+)
+
+pmf_outputs <- transform_quantile_to_pmf(
+  model_out_tbl = hubExamples::forecast_outputs |>
+    dplyr::filter(output_type == "quantile"),
+  bin_endpoints = bin_endpoints
+)
+\dontshow{\}) # examplesIf}
+}

@@ -24,10 +24,12 @@ Imports:
     reshape2,
     stats,
     tidyr
+Suggests: 
+    hubExamples,
+    testthat (>= 3.0.0)
 Remotes:
     Infectious-Disease-Modeling-Hubs/hubEnsembles,
+    Infectious-Disease-Modeling-Hubs/hubExamples,
     Infectious-Disease-Modeling-Hubs/hubUtils,
     reichlab/distfromq
-Suggests: 
-    testthat (>= 3.0.0)
 Config/testthat/edition: 3

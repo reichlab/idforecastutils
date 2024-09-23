@@ -36,6 +36,8 @@ transform_quantile_to_pmf <- function(model_out_tbl,
   do_transform_q_to_p(model_out_tbl, bin_endpoints, tail_dist)
 }
 
+#' Perform the operation of transforming quantile forecasts to pmf forecasts
+#' @noRd
 do_transform_q_to_p <- function(model_out_tbl, bin_endpoints, tail_dist) {
   task_id_cols <- get_task_id_cols(model_out_tbl)
   join_cols <- task_id_cols[task_id_cols %in% colnames(bin_endpoints)]
@@ -93,6 +95,7 @@ do_transform_q_to_p <- function(model_out_tbl, bin_endpoints, tail_dist) {
 }
 
 #' Get task id columns
+#' @noRd
 get_task_id_cols <- function(model_out_tbl) {
   model_out_cols <- colnames(model_out_tbl)
   non_task_cols <- c("model_id", "output_type", "output_type_id", "value")
@@ -102,6 +105,7 @@ get_task_id_cols <- function(model_out_tbl) {
 }
 
 #' Do validation of arguments to transform_quantile_to_pmf
+#' @noRd
 val_transform_q_to_p_args <- function(model_out_tbl, bin_endpoints) {
   if (!inherits(model_out_tbl, "model_out_tbl")) {
     model_out_tbl <- hubUtils::as_model_out_tbl(model_out_tbl)
@@ -120,6 +124,7 @@ val_transform_q_to_p_args <- function(model_out_tbl, bin_endpoints) {
 }
 
 #' Validate the column names of bin_endpoint
+#' @noRd
 val_bin_endpoint_colnames <- function(model_out_tbl, bin_endpoints, task_id_cols) {
   existing_cols <- colnames(bin_endpoints)
   required_cols <- c("output_type_id", "lower", "upper")
@@ -146,6 +151,7 @@ val_bin_endpoint_colnames <- function(model_out_tbl, bin_endpoints, task_id_cols
 #' Check that within each group defined by task id variables,
 #' all output_type_id values appear in bin_endpoints and
 #' no duplicate output_type_id values
+#' @noRd
 val_bin_endpoint_task_groups <- function(model_out_tbl, bin_endpoints, task_id_cols) {
   group_vars <- task_id_cols[task_id_cols %in% colnames(bin_endpoints)]
   if (length(group_vars) > 0) {
@@ -184,6 +190,7 @@ val_bin_endpoint_task_groups <- function(model_out_tbl, bin_endpoints, task_id_c
 #' Check that bin lower/upper endpoints are nonmissing and that
 #' within each group defined by task id variables,
 #' all bin upper endpoints match the lower endpoint of the next bin
+#' @noRd
 val_bin_endpoint_lower_upper <- function(bin_endpoints, task_id_cols) {
   if (any(is.na(bin_endpoints$lower)) || any(is.na(bin_endpoints$upper))) {
     cli::cli_abort(

@@ -4,7 +4,7 @@
 \alias{get_flusight_bin_endpoints}
 \title{Get the bin endpoints for FluSight categorical targets}
 \usage{
-get_flusight_bin_endpoints(target_ts, location_meta)
+get_flusight_bin_endpoints(target_ts, location_meta, season)
 }
 \arguments{
 \item{target_ts}{Data frame with target time series data for FluSight,
@@ -12,10 +12,23 @@ including the columns \code{location}, \code{date}, and \code{value}}
 
 \item{location_meta}{Data frame with metadata about locations for FluSight,
 matching the format of the file in cdcepi/FluSight-forecast-hub/auxiliary-data/locations.csv}
+
+\item{season}{String naming the season: either "2022/23" or "2023/24"}
 }
 \value{
-a data frame
+a data frame with columns "location", "output_type_id", "lower", "upper",
+suitable for use as an input to transform_quantile_to_pmf.
 }
 \description{
 Get the bin endpoints for FluSight categorical targets
+}
+\details{
+Compute the bin endpoints used for categorical targets in FluSight
+in the 2022/23 or 2023/24 season. In both seasons, there were 5 categories:
+"large decrease", "decrease", "stable", "increase", and "large increase".
+The bin endpoints have the form
+value +/- max(multiplier * population / 100k, min_count),
+where \code{value} denotes the most recently observed data value, and the
+multiplier and minimum count threshold were potentially specific to the
+bin.
 }

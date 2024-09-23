@@ -4,3 +4,4 @@
 .Ruserdata
 scrap code.r
 idforecastutils.code-workspace
+*.DS_Store

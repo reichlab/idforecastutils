@@ -11,7 +11,7 @@
 #' Optionally, this data frame may also contain other columns matching task id
 #' variables in `model_out_tbl`, if the bin endpoints differ depending on the
 #' prediction task (e.g. for different locations).
-#' @param tail_dist: String specifying the distribution to use for
+#' @param tail_dist String specifying the distribution to use for
 #' extrapolation into the tails of the predictive distribution. See the details
 #' for more information.
 #'
@@ -186,16 +186,18 @@ val_bin_endpoint_colnames <- function(model_out_tbl, bin_endpoints, task_id_cols
 #' all output_type_id values appear in bin_endpoints and
 #' no duplicate output_type_id values
 #' @noRd
+#'
+#' @importFrom utils head
 val_bin_endpoint_task_groups <- function(model_out_tbl, bin_endpoints, task_id_cols) {
   group_vars <- task_id_cols[task_id_cols %in% colnames(bin_endpoints)]
   if (length(group_vars) > 0) {
     output_type_id_sets <- bin_endpoints |>
       dplyr::group_by(dplyr::across(dplyr::all_of(group_vars))) |>
       dplyr::summarize(
-        otid = list(output_type_id),
+        otid = list(.data[["output_type_id"]]),
         .groups = "drop"
       ) |>
-      dplyr::distinct(otid)
+      dplyr::distinct(.data[["otid"]])
     if (nrow(output_type_id_sets) > 1) {
       cli::cli_abort(
         "{.arg bin_endpoints} must contain the same `output_type_id` values for each group defined by task id variables."
@@ -225,6 +227,8 @@ val_bin_endpoint_task_groups <- function(model_out_tbl, bin_endpoints, task_id_c
 #' within each group defined by task id variables,
 #' all bin upper endpoints match the lower endpoint of the next bin
 #' @noRd
+#'
+#' @importFrom utils head
 val_bin_endpoint_lower_upper <- function(bin_endpoints, task_id_cols) {
   if (any(is.na(bin_endpoints$lower)) || any(is.na(bin_endpoints$upper))) {
     cli::cli_abort(

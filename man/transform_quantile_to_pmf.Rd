@@ -22,7 +22,7 @@ variables in \code{model_out_tbl}, if the bin endpoints differ depending on the
 prediction task (e.g. for different locations).
 }}
 
-\item{tail_dist:}{String specifying the distribution to use for
+\item{tail_dist}{String specifying the distribution to use for
 extrapolation into the tails of the predictive distribution. See the details
 for more information.}
 }

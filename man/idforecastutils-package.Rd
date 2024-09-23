@@ -6,10 +6,15 @@
 \alias{idforecastutils-package}
 \title{idforecastutils: Utility functions for general infectious disease forecasting use}
 \description{
-A set of utility functions for various infectious disease forecasting models, exercises, and rounds
+A set of utility functions for various infectious disease forecasting models, exercises, and rounds.
 }
 \author{
-\strong{Maintainer}: Li Shandross \email{lshandross@umass.edu} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+\strong{Maintainer}: Li Shandross \email{lshandross@umass.edu} (\href{https://orcid.org/0009-0008-1348-1954}{ORCID})
+
+Authors:
+\itemize{
+  \item Evan Ray \email{elray@umass.edu}
+}
 
 }
 \keyword{internal}

@@ -88,6 +88,40 @@ test_that("transform_quantile_to_pmf works, bin endpoints depend on task id vari
 })
 
 
+test_that("transform_quantile_to_pmf works, bin endpoints depend on task id variable, extra bin endpoints", {
+  bin_endpoints <- expand.grid(
+    output_type_id = c("low", "med", "high"),
+    age_group = c("0-18", "19-65", "66+"),
+    stringsAsFactors = FALSE
+  )
+  bin_endpoints$lower <- c(-Inf, 20, 40, -Inf, 40, 80, -Inf, 50, 100)
+  bin_endpoints$upper <- c(20, 40, Inf, 40, 80, Inf, 50, 100, Inf)
+
+  test_data <- test_q_p_model_outputs(bin_endpoints)
+  q_model_outputs <- test_data$q_model_outputs
+  expected_p_model_outputs <- test_data$p_model_outputs
+
+  bin_endpoints <- dplyr::bind_rows(
+    bin_endpoints,
+    bin_endpoints |>
+      dplyr::filter(age_group == "66+") |>
+      dplyr::mutate(age_group = "really_old")
+  )
+
+  actual_p_model_outputs <- transform_quantile_to_pmf(q_model_outputs, bin_endpoints)
+
+  # same column names, number of rows, and probability values
+  expect_equal(colnames(actual_p_model_outputs), colnames(expected_p_model_outputs))
+  expect_equal(nrow(actual_p_model_outputs), nrow(expected_p_model_outputs))
+  merged_p_model_outputs <- dplyr::full_join(
+    actual_p_model_outputs, expected_p_model_outputs,
+    by = c("model_id", "location", "age_group", "output_type", "output_type_id")
+  )
+  expect_equal(nrow(actual_p_model_outputs), nrow(merged_p_model_outputs))
+  expect_equal(merged_p_model_outputs$value.x, merged_p_model_outputs$value.y, tolerance = 1e-12)
+})
+
+
 test_that("transform_quantile_to_pmf errors if model_out_tbl is not convertible to object of class model_out_tbl", {
   bin_endpoints <- expand.grid(
     output_type_id = c("low", "med", "high"),

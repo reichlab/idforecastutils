@@ -82,6 +82,10 @@ do_transform_q_to_p <- function(model_out_tbl, bin_endpoints, tail_dist) {
     )
 
   # join with bin endpoints
+  #
+  # left join because we only need rows from model_out_tbl (e.g. bin_endpoints
+  # may have more locations than model_out_tbl)
+  #
   # many-to-many relationship because:
   # - bin_endpoints may have a subset of task id columns, does not have model_id
   # - bin_endpoints has many output_type_ids
@@ -89,7 +93,7 @@ do_transform_q_to_p <- function(model_out_tbl, bin_endpoints, tail_dist) {
   # so we cross_join in that case
   if (length(join_cols) > 0) {
     model_out_tbl <- model_out_tbl |>
-      dplyr::full_join(
+      dplyr::left_join(
         bin_endpoints,
         by = join_cols,
         relationship = "many-to-many"

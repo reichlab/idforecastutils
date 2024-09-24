@@ -15,7 +15,8 @@
 #' extrapolation into the tails of the predictive distribution. See the details
 #' for more information.
 #'
-#' @return model_out_tbl with pmf forecasts
+#' @return model_out_tbl with pmf forecasts; all forecasts with other output
+#' types in the input `model_out_tbl` are discarded.
 #'
 #' @details Bin probabilities are calculated by taking a difference of values of
 #' the estimated CDF at the lower and upper endpoints of each bin. This means

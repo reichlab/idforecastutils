@@ -27,7 +27,8 @@ extrapolation into the tails of the predictive distribution. See the details
 for more information.}
 }
 \value{
-model_out_tbl with pmf forecasts
+model_out_tbl with pmf forecasts; all forecasts with other output
+types in the input \code{model_out_tbl} are discarded.
 }
 \description{
 Transform model outputs from the quantile \code{output_type} to the pmf

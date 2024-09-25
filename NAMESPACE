@@ -3,3 +3,6 @@
 export(aggregate_daily_to_weekly)
 export(get_pmf_forecasts_from_quantile)
 export(load_format_daily_data)
+export(transform_quantile_to_pmf)
+importFrom(rlang,.data)
+importFrom(utils,head)

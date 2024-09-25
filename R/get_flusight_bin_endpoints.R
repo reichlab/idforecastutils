@@ -4,10 +4,10 @@
 #' including the columns `location`, `date`, and `value`
 #' @param location_meta Data frame with metadata about locations for FluSight,
 #' matching the format of the file in cdcepi/FluSight-forecast-hub/auxiliary-data/locations.csv
-#' @param season String naming the season: either "2022/23" or "2023/24"
+#' @param season String naming the season: only "2023/24" is supported
 #'
 #' @details Compute the bin endpoints used for categorical targets in FluSight
-#' in the 2022/23 or 2023/24 season. In both seasons, there were 5 categories:
+#' in the 2023/24 season. In that season, there were 5 categories:
 #' "large decrease", "decrease", "stable", "increase", and "large increase".
 #' The bin endpoints have the form
 #' value +/- max(multiplier * population / 100k, min_count),
@@ -56,36 +56,28 @@ get_flusight_bin_endpoints <- function(target_ts, location_meta, season) {
 }
 
 get_flusight_bin_endpoint_meta <- function(season) {
-  if (season == "2022/23") {
-    return(get_flusight_bin_endpoint_meta_2223())
-  } else if (season == "2023/24") {
+  if (season == "2023/24") {
     return(get_flusight_bin_endpoint_meta_2324())
   } else {
     stop("unsupported season")
   }
 }
 
-get_flusight_bin_endpoint_meta_2223 <- function() {
-  bin_endpoint_meta <- data.frame(
-    output_type_id = c("large_decrease", "decrease", "stable", "increase", "large_increase"),
-    lower_sign = c(-1, -1, -1, 1, 1),
-    lower_rate_multiplier = c(Inf, 2, 1, 1, 2),
-    lower_min_count_change = c(Inf, 40, 20, 20, 40),
-    upper_sign = c(-1, -1, 1, 1, 1),
-    upper_rate_multiplier = c(2, 1, 1, 2, Inf),
-    upper_min_count_change = c(40, 20, 20, 40, Inf),
-    stringsAsFactors = FALSE
-  )
-
-  return(bin_endpoint_meta)
-}
 
 get_flusight_bin_endpoint_meta_2324 <- function() {
+  # we use 9.5 for the minimum count change because for low-population states,
+  # the intervals have the half-open form (value - 9.5, value + 9.5] for stable,
+  # (value - ***, value - 9.5] for decrease and large decrease,
+  # (value + 9.5, value + ***] for increase and large increase,
+  # where *** is something coming from a population rate per 100k since all
+  # state populations / 100000 are greater than 5
+  # In all cases, this says a count change of less than 10 is stable
+  # and a count change of 10 or more is non-stable
   bin_endpoint_meta <- tidyr::expand_grid(
     horizon = 0:3,
     output_type_id = list(c("large_decrease", "decrease", "stable", "increase", "large_increase")),
-    lower_min_count_change = 10,
-    upper_min_count_change = 10
+    lower_min_count_change = 9.5,
+    upper_min_count_change = 9.5
   )
 
   bin_endpoint_meta$rate_multiplier_endpoints <- list(

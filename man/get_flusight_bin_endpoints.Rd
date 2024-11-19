@@ -13,7 +13,7 @@ including the columns \code{location}, \code{date}, and \code{value}}
 \item{location_meta}{Data frame with metadata about locations for FluSight,
 matching the format of the file in cdcepi/FluSight-forecast-hub/auxiliary-data/locations.csv}
 
-\item{season}{String naming the season: either "2022/23" or "2023/24"}
+\item{season}{String naming the season: only "2023/24" and "2024/25" are supported}
 }
 \value{
 a data frame with columns "location", "output_type_id", "lower", "upper",
@@ -24,7 +24,7 @@ Get the bin endpoints for FluSight categorical targets
 }
 \details{
 Compute the bin endpoints used for categorical targets in FluSight
-in the 2022/23 or 2023/24 season. In both seasons, there were 5 categories:
+in the 2023/24 or 2024/25 season. In that season, there were 5 categories:
 "large decrease", "decrease", "stable", "increase", and "large increase".
 The bin endpoints have the form
 value +/- max(multiplier * population / 100k, min_count),

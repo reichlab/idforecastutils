@@ -4,10 +4,10 @@
 #' including the columns `location`, `date`, and `value`
 #' @param location_meta Data frame with metadata about locations for FluSight,
 #' matching the format of the file in cdcepi/FluSight-forecast-hub/auxiliary-data/locations.csv
-#' @param season String naming the season: only "2023/24" is supported
+#' @param season String naming the season: only "2023/24" and "2024/25" are supported
 #'
 #' @details Compute the bin endpoints used for categorical targets in FluSight
-#' in the 2023/24 season. In that season, there were 5 categories:
+#' in the 2023/24 or 2024/25 season. In that season, there were 5 categories:
 #' "large decrease", "decrease", "stable", "increase", and "large increase".
 #' The bin endpoints have the form
 #' value +/- max(multiplier * population / 100k, min_count),
@@ -55,16 +55,8 @@ get_flusight_bin_endpoints <- function(target_ts, location_meta, season) {
   return(bin_endpoints)
 }
 
-get_flusight_bin_endpoint_meta <- function(season) {
-  if (season == "2023/24") {
-    return(get_flusight_bin_endpoint_meta_2324())
-  } else {
-    stop("unsupported season")
-  }
-}
 
-
-get_flusight_bin_endpoint_meta_2324 <- function() {
+get_flusight_bin_endpoint_meta <- function(season = "2023/24") {
   # we use 9.5 for the minimum count change because for low-population states,
   # the intervals have the half-open form (value - 9.5, value + 9.5] for stable,
   # (value - ***, value - 9.5] for decrease and large decrease,
@@ -80,12 +72,23 @@ get_flusight_bin_endpoint_meta_2324 <- function() {
     upper_min_count_change = 9.5
   )
 
-  bin_endpoint_meta$rate_multiplier_endpoints <- list(
-    c(-Inf, -2, -1, 1, 2, Inf),
-    c(-Inf, -3, -1, 1, 3, Inf),
-    c(-Inf, -4, -2, 2, 4, Inf),
-    c(-Inf, -5, -2.5, 2.5, 5, Inf)
-  )
+  if (!(season %in% c("2023/24", "2024/25"))) {
+    stop("unsupported season")
+  } else if (season == "2023/24") {
+    bin_endpoint_meta$rate_multiplier_endpoints <- list(
+      c(-Inf, -2, -1, 1, 2, Inf),
+      c(-Inf, -3, -1, 1, 3, Inf),
+      c(-Inf, -4, -2, 2, 4, Inf),
+      c(-Inf, -5, -2.5, 2.5, 5, Inf)
+    )
+  } else if (season == "2024/25") {
+    bin_endpoint_meta$rate_multiplier_endpoints <- list(
+      c(-Inf, -1.7, -0.3, 0.3, 1.7, Inf),
+      c(-Inf, -3, -0.5, 0.5, 3, Inf),
+      c(-Inf, -4, -0.7, 0.7, 4, Inf),
+      c(-Inf, -5, -1, 1, 5, Inf)
+    )
+  }
 
   bin_endpoint_meta <- bin_endpoint_meta |>
     dplyr::mutate(
